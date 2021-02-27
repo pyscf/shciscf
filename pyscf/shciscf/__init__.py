@@ -16,3 +16,5 @@
 # Author: Sandeep Sharma <sanshar@gmail.com>
 #         James Smith <james.smith9113@gmail.com>
 #
+
+__version__ = '0.0.1'
