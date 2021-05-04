@@ -7,9 +7,9 @@ SHCI-SCF module for PySCF
 
 Install
 -------
-* Install to python site-package folder
+* Install to python site-packages folder
 ```
-pip install https://github.com/pyscf/shciscf
+pip install git+https://github.com/pyscf/shciscf
 ```
 
 * Install in a custom folder for development
