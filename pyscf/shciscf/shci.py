@@ -35,7 +35,9 @@ import numpy
 import pyscf.tools
 import pyscf.lib
 from pyscf.lib import logger
-from pyscf import mcscf
+from pyscf import mcscf, symm
+
+from . import symm_utils
 
 ndpointer = numpy.ctypeslib.ndpointer
 
@@ -58,7 +60,6 @@ except ImportError:
 # Libraries
 from pyscf.lib import load_library
 
-libE3unpack = load_library("libicmpspt")
 # TODO: Organize this better.
 shciLib = load_library("libshciscf")
 
@@ -628,13 +629,6 @@ class SHCI(pyscf.lib.StreamObject):
         sys.stdout.flush()
         return E3
 
-        # if (filetype == "binary") :
-        #    fname = os.path.join('%s/%s/'%(self.scratchDirectory,"node0"), "spatial_threepdm.%d.%d.bin" %(state, state))
-        #    fnameout = os.path.join('%s/%s/'%(self.scratchDirectory,"node0"), "spatial_threepdm.%d.%d.bin.unpack" %(state, state))
-        #    libE3unpack.unpackE3(ctypes.c_char_p(fname.encode()),
-        #                         ctypes.c_char_p(fnameout.encode()),
-        #                         ctypes.c_int(norb))
-
     def make_rdm4(
             self,
             state,
@@ -1046,19 +1040,18 @@ def writeSHCIConfFile(SHCI, nelec, Restart):
             for i in range(int(nelec[1])):
                 f.write("%i " % (2 * i + 1))
         else:
-            from pyscf import symm
-            from pyscf.dmrgscf import dmrg_sym
+            
             from pyscf.symm.basis import DOOH_IRREP_ID_TABLE
 
             if SHCI.groupname is not None and SHCI.orbsym is not []:
-                orbsym = dmrg_sym.convert_orbsym(SHCI.groupname, SHCI.orbsym)
+                orbsym = symm_utils.convert_orbsym(SHCI.groupname, SHCI.orbsym)
             else:
                 orbsym = [1] * norb
             done = []
             for k, v in SHCI.irrep_nelec.items():
 
                 irrep, nalpha, nbeta = (
-                    [dmrg_sym.irrep_name2id(SHCI.groupname, k)],
+                    [symm_utils.irrep_name2id(SHCI.groupname, k)],
                     v[0],
                     v[1],
                 )
@@ -1277,7 +1270,6 @@ def writeIntegralFile(SHCI, h1eff, eri_cas, norb, nelec, ecore=0):
         os.makedirs(SHCI.scratchDirectory)
 
     from pyscf import symm
-    from pyscf.dmrgscf import dmrg_sym
 
     if SHCI.groupname in ('SO3', 'Dooh', 'Coov') and SHCI.useExtraSymm:
         coeffs, nRows, rowIndex, rowCoeffs, orbsym = D2htoDinfh(SHCI, norb, nelec)
@@ -1311,7 +1303,7 @@ def writeIntegralFile(SHCI, h1eff, eri_cas, norb, nelec, ecore=0):
 
     else:
         if SHCI.groupname is not None and SHCI.orbsym is not []:
-            orbsym = dmrg_sym.convert_orbsym(SHCI.groupname, SHCI.orbsym)
+            orbsym = symm_utils.convert_orbsym(SHCI.groupname, SHCI.orbsym)
         else:
             orbsym = [1] * norb
 
