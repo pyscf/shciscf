@@ -18,7 +18,7 @@ DESCRIPTION  = 'An interface to SHCI program Dice developed by Sharma group'
 SO_EXTENSIONS = {
     'pyscf.lib.libshciscf': ['pyscf/shciscf/libSHCITools.c']
 }
-DEPENDENCIES = ['pyscf', 'numpy', 'pyscf-icmpspt @ git+https://github.com/pyscf/icmpspt.git']
+DEPENDENCIES = ['pyscf ', 'numpy']
 
 #######################################################################
 # Unless not working, nothing below needs to be changed.
@@ -46,6 +46,7 @@ if not metadata.get('VERSION', None):
     VERSION = guess_version()
 
 pyscf_lib_dir = os.path.join(topdir, 'pyscf', 'lib')
+os.makedirs(pyscf_lib_dir, exist_ok=True)
 def make_ext(pkg_name, srcs,
              libraries=[], library_dirs=[pyscf_lib_dir],
              include_dirs=[], extra_compile_flags=[],
