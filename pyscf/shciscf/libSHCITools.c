@@ -80,7 +80,6 @@
 	  for (k=0; k<norbs; k++)
 	    for (l=0; l<norbs; l++)
 	      {
-		double _Complex comp = 0.0;
 		for (ia=0; ia<nRows[i]; ia++)
 		  for (ja=0; ja<nRows[j]; ja++)
 		    for (ka=0; ka<nRows[k]; ka++)
@@ -106,7 +105,7 @@
     
     fprintf(fp, "&FCI NORBS=%d, NELEC=%d, MS2=0\n", norbs, nelec);
     fprintf(fp, "ORBSYM=");
-    int i,j,k,l,ia,ja,ka,la;
+    int i,j,k,l;
     for (i=0; i<norbs; i++) {
       fprintf(fp, "%d,", irrep[i]);
     }
@@ -181,8 +180,6 @@ void writeERI ( FILE* fOut, double * eri, size_t norb, double tol)
   size_t ij = 0;
   size_t kl = 0;
   size_t ijkl = 0;
-  size_t n2 = norb*norb;
-  size_t n3 = n2*norb;
 
   size_t i,j,k,l;
   for ( i=0; i<norb; ++i ) {
@@ -205,7 +202,7 @@ void writeERI ( FILE* fOut, double * eri, size_t norb, double tol)
   }  
 }
 
-void writeHCore ( FILE * fOut, double * h1e, size_t norb, double tol )
+void writeHCore ( FILE * fOut, double * h1e, int norb, double tol )
 {
   int i,j;
 
