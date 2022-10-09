@@ -5,12 +5,6 @@ SHCI-SCF module for PySCF
 
 * Version 0.1
 
-Dependencies
-------------
-
-- [ICMPSPT PySCF Extension](https://github.com/pyscf/icmpspt)
-- [DMRGSCF PySCF Extension](https://github.com/pyscf/dmrgscf)
-
 Install
 -------
 * Install to python site-packages folder

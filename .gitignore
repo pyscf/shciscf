@@ -24,6 +24,11 @@ var/
 
 # Local log files
 *~
+*.bkp
+*.e
+*.0.txt
+FCIDUMP
+*.dat
 
 # Calculation examples
 *.molden
@@ -66,6 +71,7 @@ settings.py
 
 # Memoization and caching
 tmp/
+tmp*
 
 # IDEs
 .idea/
