@@ -4,7 +4,7 @@
 
 * This module is for the pyscf package and connects it to the Dice software that implements the SHCI algorithm. It provides an approximate FCI solver with greatly improved speed over traditional solvers.
 
-* Dice: https://sanshar.github.io/Dice/ 
+* Dice: https://github.com/sanshar/Dice 
 * PYSCF: https://github.com/pyscf/pyscf
 
 
