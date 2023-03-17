@@ -22,7 +22,7 @@ Comparing determining the effect of acitve-active orbital rotations. All output
 is deleted after the run to keep the directory neat. Comment out the cleanup
 section to view output.
 """
-from pyscf import gto, scf, mcscf, dmrgscf
+from pyscf import gto, scf, mcscf
 from pyscf.shciscf import shci
 
 #

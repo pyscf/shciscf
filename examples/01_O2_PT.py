@@ -23,7 +23,7 @@ cleanup section to view output files.
 """
 import time
 
-from pyscf import gto, scf, mcscf, dmrgscf
+from pyscf import gto, scf, mcscf
 from pyscf.shciscf import shci
 
 t0 = time.time()
