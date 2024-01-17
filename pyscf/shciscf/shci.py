@@ -436,10 +436,8 @@ class SHCI(pyscf.lib.StreamObject):
 
         Parameters
         ----------
-        ncas : int
-            Unused, but kept to continuity with `mcscf.CASCI`
-        nelecas : int
-            Unused, but kept to continuity with `mcscf.CASCI`
+        norb : int, number of active orbitals 
+        nelec : tuple, number of active electrons (\alpha, \beta)
         root : int
             State to read RDM for, default is 0.\
         Returns
