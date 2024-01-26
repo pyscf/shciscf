@@ -240,6 +240,7 @@ class SHCI(pyscf.lib.StreamObject):
         self.nroots = 1
         self.nPTiter = 0
         self.DoRDM = True
+        self.DoSpinRDM = False
         self.sweep_iter = []
         self.sweep_epsilon = []
         self.maxIter = 6
@@ -247,6 +248,8 @@ class SHCI(pyscf.lib.StreamObject):
         self.num_thrds = num_thrds
         self.orbsym = []
         self.onlywriteIntegral = False
+        self.printbestdeterminants = None
+        self.writebestdeterminants = None
         self.spin = None
         self.orbsym = []
         if mol is None:
@@ -313,6 +316,10 @@ class SHCI(pyscf.lib.StreamObject):
             "sweep_epsilon          = %s",
             "[" + ",".join(["{:>5}" for item in self.sweep_epsilon]).format(*self.sweep_epsilon) + "]",
         )
+        if self.printbestdeterminants is not None:
+            log.info("printbestdeterminants  = %i", self.printbestdeterminants)
+        if self.writebestdeterminants is not None:
+            log.info("writebestdeterminants  = %i", self.writebestdeterminants)  
         log.info("nPTiter                = %i", self.nPTiter)
         log.info("Stochastic             = %r", self.stochastic)
         log.info("restart                = %s", str(self.restart or self._restart))
@@ -423,7 +430,71 @@ class SHCI(pyscf.lib.StreamObject):
         onepdm = numpy.einsum("ikjj->ki", twopdm)
         onepdm /= nelectrons - 1
         return onepdm, twopdm
+    
+    def make_rdm12s(self, norb, nelec, root=0):
+        """Returns the $\alpha-\alpha$ and $\beta-\beta$ blocks of the spin 1RDM.
 
+        Parameters
+        ----------
+        norb : int, number of active orbitals 
+        nelec : tuple, number of active electrons (\alpha, \beta)
+        root : int
+            State to read RDM for, default is 0.\
+        Returns
+        -------
+        tuple
+            A tuple of the $\alpha-\alpha$ and $\beta-\beta$ blocks of the spin 1RDM, e.g., (dm1a, dm1b)
+            A tuple of the $\alpha-\alpha$, $\alpha-\beta$, and $\beta-\beta$ blocks of the spin 2RDM, e.g., (dm2aa, dm2ab, dm2bb)
+        """
+        
+        #
+        # Read a 2-RDM from the spin-RDM text file output by Dice
+        # Also construct the 1-RDM at the same time
+        # Ref: https://github.com/sanshar/Dice/blob/master/Wavefunctions/SCPT.cpp#L3093
+        #
+        nSpinOrbsAct = 2 * norb
+        nPairs = nSpinOrbsAct * nSpinOrbsAct
+        nalpha, nbeta = nelec
+        oneRDM = numpy.zeros((nSpinOrbsAct, nSpinOrbsAct))
+        twoRDM = numpy.zeros((nPairs, nPairs))
+
+        rel_filepath = "spinRDM.{}.{}.txt".format(root, root)
+        with open(rel_filepath, "r") as RDMFile:
+            for lineStr in RDMFile:
+                words = lineStr.split()
+
+                a, b, c, d = map(int, words[:4])
+                elem = float(words[4])
+
+                ind1 = a * nSpinOrbsAct + b
+                ind2 = c * nSpinOrbsAct + d
+                ind3 = b * nSpinOrbsAct + a
+                ind4 = d * nSpinOrbsAct + c
+
+                twoRDM[ind1, ind2] = elem
+                twoRDM[ind3, ind2] = -elem
+                twoRDM[ind1, ind4] = -elem
+                twoRDM[ind3, ind4] = elem
+
+                if b == d: oneRDM[a, c] += elem
+                if b == c: oneRDM[a, d] += -elem
+                if a == d: oneRDM[b, c] += -elem
+                if a == c: oneRDM[b, d] += elem
+
+        nelec_act = nalpha + nbeta
+
+        # Normalize the 1-RDM
+        oneRDM /= nelec_act - 1
+
+        # Get the spin 1-RDMs and 2-RDMs, the minus sign "-" and the transpose is to match the convention
+        dm1a = oneRDM[::2, ::2]
+        dm1b = oneRDM[1::2, 1::2]
+        twoRDM_tensor  = - twoRDM.reshape(nSpinOrbsAct,nSpinOrbsAct,nSpinOrbsAct,nSpinOrbsAct).transpose(0,3,1,2)
+        dm2aa = twoRDM_tensor[::2, ::2, ::2, ::2]
+        dm2ab = twoRDM_tensor[::2, ::2, 1::2, 1::2]
+        dm2bb = twoRDM_tensor[1::2, 1::2, 1::2, 1::2]
+        return (dm1a, dm1b), (dm2aa, dm2ab, dm2bb)
+    
     def trans_rdm1(self, statebra, stateket, norb, nelec, link_index=None, **kwargs):
         return self.trans_rdm12(statebra, stateket, norb, nelec, link_index, **kwargs)[0]
 
@@ -1120,6 +1191,12 @@ def writeSHCIConfFile(SHCI, nelec, Restart):
     f.write("targetError %g\n" % SHCI.targetError)
     f.write("sampleN %i\n" % SHCI.sampleN)
 
+    # Print determinants
+    if SHCI.printbestdeterminants is not None:
+        f.write("printbestdeterminants %d\n" % SHCI.printbestdeterminants)
+    if SHCI.writebestdeterminants is not None:
+        f.write("writebestdeterminants %d\n" % SHCI.writebestdeterminants)
+        
     # Miscellaneous Keywords
     f.write("\n#misc\n")
     f.write("io \n")
@@ -1131,6 +1208,8 @@ def writeSHCIConfFile(SHCI, nelec, Restart):
         f.write("DoOneRDM\n")
         f.write("DoSpinOneRDM\n")
         f.write("DoRDM\n")
+    if SHCI.DoSpinRDM:
+        f.write("DoSpinRDM\n")
     for line in SHCI.extraline:
         f.write("%s\n" % line)
 

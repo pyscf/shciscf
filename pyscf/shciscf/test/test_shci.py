@@ -255,6 +255,40 @@ class KnownValues(unittest.TestCase):
         self.assertLess(dm1_check, 1e-5)
 
     @unittest.skipIf(NO_SHCI, "No SHCI Settings Found")
+    def test_spin_RDMs(self):
+        mol = gto.M(
+            atom="""
+            C   0.0000     0.0000    0.0000  
+            H   -0.9869    0.3895    0.2153  
+            H   0.8191     0.6798   -0.1969  
+            H   0.1676    -1.0693   -0.0190  
+        """,
+            spin=1,
+        )
+        ncas, nelecas = (7, 7)
+        mf = scf.ROHF(mol).run()
+        mc = shci.SHCISCF(mf, ncas, nelecas)
+        mc.davidsonTol = 1e-8
+        mc.dE = 1e-12
+        mc.fcisolver.DoRDM = True
+        mc.fcisolver.DoSpinRDM = True
+        mc.kernel()
+        
+        #
+        # Get partial 1-RDM and 2-RDM as references
+        #
+        onepdm, twopdm = mc.fcisolver.make_rdm12(0, ncas, mc.nelecas)
+
+        #
+        # Get our spin 1-RDMs and 2-RDMs
+        #
+        (dm1a, dm1b), (dm2aa, dm2ab, dm2bb) = mc.fcisolver.make_rdm12s(ncas, mc.nelecas)
+        oneRDM = dm1a + dm1b
+        twoRDM = dm2aa + dm2ab + dm2ab.transpose(2,3,0,1) + dm2bb
+        self.assertLess(numpy.linalg.norm(oneRDM - onepdm), 5e-5)
+        self.assertLess(numpy.linalg.norm(twopdm - twoRDM), 5e-5)
+        
+    @unittest.skipIf(NO_SHCI, "No SHCI Settings Found")
     def test_DFCASCI_natorb(self):
         #
         mol = gto.M(atom="C 0 0 0; C 0 0 1;", basis="ccpvdz", spin=2, verbose=0)
